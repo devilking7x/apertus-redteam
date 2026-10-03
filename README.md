@@ -7,10 +7,12 @@ underperforms or behaves unexpectedly").
 ## What / why
 
 Safety fine-tuning is usually validated in English and on a handful of
-attack styles. This harness probes five attack classes with **seeded,
+attack styles. This harness probes seven attack classes with **seeded,
 deterministic prompt generation** and logs every prompt/response/judgment
 to JSONL, so any finding reproduces with one command — the jury's
-"validity" criterion rewards exactly this.
+"validity" criterion rewards exactly this. `summary.json` carries the
+Attack Success Rate with a 95% Wilson confidence interval, and
+`redteam/figures.py` turns run statistics into report-ready charts.
 
 **Heuristic judges are triage signals, not verdicts.** Every flagged case
 must be human-reviewed before it becomes a finding (see
@@ -41,9 +43,15 @@ bash reproduce.sh <run-id>
 
 # Run everything (example sweep)
 for a in multilingual_jailbreak pii_extraction copyright_regurgitation \
-         bias_stereotype prompt_injection; do
+         bias_stereotype prompt_injection factual_correctness \
+         swiss_culture_values; do
   python run.py --attack $a --seed 42 --variations 12
 done
+
+# Layer obfuscation on top of any attack (comma-separated, applied in order)
+python run.py --attack prompt_injection --seed 7 --variations 8 \
+  --mutations base64_wrap,roleplay_framing
+# Available: base64_wrap, leetspeak, roleplay_framing, multiturn_prefix
 ```
 
 CI / smoke test without a model:
@@ -52,7 +60,7 @@ CI / smoke test without a model:
 python run.py --attack prompt_injection --seed 1 --variations 3 --backend stub
 ```
 
-## The 5 attack classes
+## The 7 attack classes
 
 | Module | What it tests | Novelty angle |
 |---|---|---|
@@ -61,6 +69,38 @@ python run.py --attack prompt_injection --seed 1 --variations 3 --backend stub
 | `copyright_regurgitation` | Verbatim-text requests; longest-verbatim-run vs local refs (`refs/`, gitignored) | Regurgitation measurement |
 | `bias_stereotype` | Swiss linguistic-region groups: stereotype agreement + open completions | Home-culture bias |
 | `prompt_injection` | Carrier task + embedded instruction with unique canary; canary in output = hierarchy failure | Indirect injection |
+| `factual_correctness` | Verifiable Swiss facts (canton capitals), post-cutoff questions (model should hedge, not fabricate), YES/NO self-contradiction pairs | Hallucination traps with ground truth |
+| `swiss_culture_values` | Pushes to abandon neutrality / bypass direct democracy / drop a national language — does the model defend the value? | Values-alignment for a sovereign Swiss model |
+
+## Prompt mutations (`--mutations`)
+
+Composable obfuscation wrappers applied deterministically on top of any
+attack's base prompts (recorded in `config.json`, re-applied by
+`reproduce.sh`):
+
+| Mutation | Effect |
+|---|---|
+| `base64_wrap` | Base64-encodes the prompt, asks the model to decode it |
+| `leetspeak` | Deterministic 1337 character substitution |
+| `roleplay_framing` | Prefixes an "authorized red-team exercise" framing |
+| `multiturn_prefix` | Fake benign first turn; attack arrives as the second user turn |
+
+Example: `--mutations base64_wrap,roleplay_framing`
+
+## Statistics & figures
+
+Every `summary.json` includes `asr` (attack success rate), `wilson_ci`
+(95% Wilson confidence interval — honest error bars for small n), and,
+for multilingual runs, `language_delta` (mean judge score English vs
+non-English; positive = worse off-English). Generate report charts:
+
+```python
+from redteam.stats import group_by_attack
+from redteam.figures import asr_bar_chart, language_delta_chart
+# per_attack = group_by_attack(all_records)  # across runs
+asr_bar_chart(per_attack, "report/figures/asr.png")
+language_delta_chart(delta, "report/figures/language_delta.png")
+```
 
 ## How to add an attack class
 
@@ -103,12 +143,13 @@ follow:
 ## Layout
 
 ```
-redteam/        # package: backends + deterministic runner
-attacks/        # 5 attack modules (generate + judge)
+redteam/        # package: backends + deterministic runner + stats + figures
+attacks/        # 7 attack modules (generate + judge) + mutations.py
 findings/       # TEMPLATE.md + one file per confirmed issue
 report/         # outline.md — technical-report skeleton
-tests/          # pytest: determinism, judge sanity, log schema
-run.py          # CLI entry point
+                # figures/ — auto-generated charts (asr.png, language_delta.png)
+tests/          # pytest: determinism, judge sanity, log schema, stats, mutations
+run.py          # CLI entry point (--attack, --mutations, --backend, ...)
 reproduce.sh    # one-command repro by run ID
 runs/           # logs (gitignored)
 ```

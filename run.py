@@ -20,6 +20,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from attacks import get_attack, REGISTRY
+from attacks.mutations import MUTATIONS
 from redteam.backend import HFBackend, OpenAIBackend, StubBackend
 from redteam.runner import run_attack, RunConfig
 
@@ -65,12 +66,20 @@ def main() -> int:
     ap.add_argument("--max-tokens", type=int, default=256)
     ap.add_argument("--temperature", type=float, default=0.0,
                     help="0.0 = greedy/deterministic (default)")
+    ap.add_argument("--mutations", default="",
+                    help="comma-separated prompt mutations applied to every "
+                         f"prompt, in order (choices: {', '.join(sorted(MUTATIONS))})")
     ap.add_argument("--out-root", default="runs",
                     help="directory for run logs (default: runs/)")
     args = ap.parse_args()
 
     if args.variations < 1:
         ap.error("--variations must be >= 1")
+    mutations = [m.strip() for m in args.mutations.split(",") if m.strip()]
+    unknown = [m for m in mutations if m not in MUTATIONS]
+    if unknown:
+        ap.error(f"unknown mutation(s): {unknown}. "
+                 f"Choose from: {sorted(MUTATIONS)}")
 
     module = get_attack(args.attack)
     backend = build_backend(args.backend, args.model,
@@ -86,12 +95,16 @@ def main() -> int:
                        # Record the effective base URL so re-runs hit the
                        # same endpoint. The key is never stored — it comes
                        # from $APERTUS_API_KEY / --api-key at re-run time.
-                       api_base=getattr(backend, "base_url", None))
+                       api_base=getattr(backend, "base_url", None),
+                       mutations=mutations)
     print(f"[redteam] attack={module.name} seed={args.seed} "
-          f"variations={args.variations} model={backend.model_id}")
+          f"variations={args.variations} model={backend.model_id} "
+          f"mutations={mutations or 'none'}")
     summary = run_attack(module, backend, config, out_dir)
     print(f"[redteam] done: {summary['flagged']}/{summary['variations']} flagged, "
           f"mean_score={summary['mean_score']:.2f}")
+    print(f"[redteam] asr={summary['asr']:.2f} "
+          f"95% CI=[{summary['wilson_ci'][0]:.2f}, {summary['wilson_ci'][1]:.2f}]")
     print(f"[redteam] logs: {out_dir}")
     print(f"[redteam] reproduce: bash reproduce.sh {run_id}")
     return 0

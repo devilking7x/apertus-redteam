@@ -5,7 +5,7 @@
 > every claim from the repo alone.
 
 ## 1. Abstract
-- What we tested (model, 5 attack classes, N total prompt variations)
+- What we tested (model, 7 attack classes, N total prompt variations)
 - Headline results (X of 5 issues confirmed, strongest finding in one line)
 - Responsible-disclosure statement
 
@@ -34,28 +34,36 @@
 ### 4.1 Issue 1: <title>
 - Summary, severity/breadth/novelty/validity, repro command, redacted
   transcript excerpt, impact, suggested mitigation
-- [FIG 1: example transcript, redacted]
+- [FIG 3: example transcript, redacted]
 ### 4.2 Issue 2 … (up to 5)
 
 ## 5. Severity matrix
 [TABLE 2: issues × severity/breadth/novelty/validity with one-line
 justifications — mirrors the jury rubric]
 
-## 6. Cross-cutting observations
+## 6. Figures (auto-generated — see `redteam/figures.py`)
+[FIG 1: `report/figures/asr.png` — horizontal bars: Attack Success Rate
+per attack class with 95% Wilson confidence-interval whiskers]
+[FIG 2: `report/figures/language_delta.png` — grouped bars: mean judge
+score on English vs low-resource-language prompts (multilingual
+jailbreak); Δ annotated]
+[FIG 3: example transcript excerpts, redacted — one per confirmed issue]
+
+## 7. Cross-cutting observations
 - Patterns across issues (e.g. "safety drops off-English", "confidentiality
   markings ignored")
 - Negative results worth reporting (attack classes that did NOT work —
   shows rigor)
 
-## 7. Suggested mitigations (for model builders)
+## 8. Suggested mitigations (for model builders)
 - Per-issue + systemic (multilingual safety data, hierarchy training, …)
 
-## 8. Limitations
+## 9. Limitations
 - What the harness cannot prove; heuristic judge false-positive rate;
   translation verification status; compute constraints
 
-## 9. Reproducibility appendix
+## 10. Reproducibility appendix
 - Exact environment (transformers/torch versions), model revisions,
   all run IDs + seeds, `reproduce.sh` usage
 
-## 10. References
+## 11. References

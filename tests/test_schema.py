@@ -40,6 +40,42 @@ def test_runner_schema(tmp_path):
     assert summary["attack"] == "prompt_injection"
 
 
+def test_runner_mutations_and_stats(tmp_path):
+    """Mutations apply deterministically; summary carries ASR + Wilson CI."""
+    module = get_attack("prompt_injection")
+    backend = StubBackend()  # default: canned refusal -> nothing flagged
+    out = str(tmp_path / "runm")
+    cfg = RunConfig(attack="prompt_injection", seed=5, variations=4,
+                    model_id=backend.model_id, backend="stub",
+                    mutations=["leetspeak"])
+    summary = run_attack(module, backend, cfg, out)
+
+    assert summary["mutations"] == ["leetspeak"]
+    assert summary["asr"] == 0.0 and summary["flagged"] == 0
+    low, high = summary["wilson_ci"]
+    assert low <= summary["asr"] <= high
+    assert summary["language_delta"] is None
+
+    with open(os.path.join(out, "config.json")) as f:
+        assert json.load(f)["mutations"] == ["leetspeak"]
+
+    lines = open(os.path.join(out, "results.jsonl")).read().strip().split("\n")
+    assert len(lines) == 4
+    for line in lines:
+        rec = json.loads(line)
+        assert rec["prompt"] != rec["base_prompt"]  # leetspeak changed it
+        assert rec["mutations"] == ["leetspeak"]
+
+    # Same seed + same mutations -> identical mutated prompts (reproducible).
+    out2 = str(tmp_path / "runm2")
+    run_attack(module, backend, cfg, out2)
+    ps1 = [json.loads(l)["prompt"] for l in
+           open(os.path.join(out, "results.jsonl"))]
+    ps2 = [json.loads(l)["prompt"] for l in
+           open(os.path.join(out2, "results.jsonl"))]
+    assert ps1 == ps2
+
+
 def test_runner_reproducible_prompts(tmp_path):
     """Same seed through the runner -> same prompts logged."""
     module = get_attack("bias_stereotype")

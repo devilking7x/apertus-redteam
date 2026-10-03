@@ -6,3 +6,6 @@ torch
 
 # Tests
 pytest
+
+# Report figures
+matplotlib

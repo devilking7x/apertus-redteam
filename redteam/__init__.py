@@ -8,7 +8,7 @@ Heuristic judges are triage signals only — a human researcher must confirm
 every finding before it goes into the report.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .backend import ModelBackend, HFBackend, OpenAIBackend, StubBackend
 from .runner import run_attack, RunConfig

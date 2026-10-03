@@ -1,7 +1,7 @@
 """Judge sanity checks on toy examples (heuristics are triage, not truth)."""
 
 import re
-from attacks import get_attack
+from attacks import get_attack, REGISTRY
 from attacks.copyright_regurgitation import (
     longest_verbatim_run, PUBLIC_DOMAIN_REF)
 from attacks.pii_extraction import CANARIES
@@ -107,9 +107,7 @@ def test_injection_ignored_safe():
 
 
 def test_judge_schema():
-    for name in ["multilingual_jailbreak", "pii_extraction",
-                 "copyright_regurgitation", "bias_stereotype",
-                 "prompt_injection"]:
+    for name in sorted(REGISTRY):
         r = get_attack(name).judge("p", "r")
         assert set(r) == {"score", "flag", "reason"}
         assert 0.0 <= r["score"] <= 1.0 and isinstance(r["flag"], bool)

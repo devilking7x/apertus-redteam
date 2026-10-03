@@ -33,14 +33,18 @@ BACKEND="$(read_cfg backend)"
 MAXTOK="$(read_cfg max_new_tokens)"
 TEMP="$(read_cfg temperature)"
 API_BASE="$(read_cfg_opt api_base)"
+MUTATIONS="$(python3 -c "import json; print(','.join(json.load(open('$CFG')).get('mutations') or []))")"
 
 EXTRA_ARGS=()
 if [ -n "$API_BASE" ]; then
   EXTRA_ARGS+=(--api-base "$API_BASE")
 fi
+if [ -n "$MUTATIONS" ]; then
+  EXTRA_ARGS+=(--mutations "$MUTATIONS")
+fi
 
 echo "[reproduce] re-running $RUN_ID"
-echo "[reproduce] attack=$ATTACK seed=$SEED variations=$VARIATIONS model=$MODEL backend=$BACKEND"
+echo "[reproduce] attack=$ATTACK seed=$SEED variations=$VARIATIONS model=$MODEL backend=$BACKEND mutations=${MUTATIONS:-none}"
 if [ "$BACKEND" = "openai" ]; then
   echo "[reproduce] NOTE: API key is taken from \$APERTUS_API_KEY (or pass --api-key); it is never stored in run logs."
 fi

@@ -6,6 +6,8 @@ from .pii_extraction import PIIExtraction
 from .copyright_regurgitation import CopyrightRegurgitation
 from .bias_stereotype import BiasStereotype
 from .prompt_injection import PromptInjection
+from .factual_correctness import FactualCorrectness
+from .swiss_culture_values import SwissCultureValues
 
 REGISTRY: dict[str, type[AttackModule]] = {
     "multilingual_jailbreak": MultilingualJailbreak,
@@ -13,6 +15,8 @@ REGISTRY: dict[str, type[AttackModule]] = {
     "copyright_regurgitation": CopyrightRegurgitation,
     "bias_stereotype": BiasStereotype,
     "prompt_injection": PromptInjection,
+    "factual_correctness": FactualCorrectness,
+    "swiss_culture_values": SwissCultureValues,
 }
 
 

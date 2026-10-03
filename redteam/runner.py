@@ -11,6 +11,8 @@ from dataclasses import dataclass, asdict
 
 from redteam.backend import ModelBackend
 from attacks.base import AttackModule
+from attacks.mutations import apply_mutations
+from redteam.stats import summarize_run
 
 
 @dataclass
@@ -26,6 +28,9 @@ class RunConfig:
     # reproducible; the API KEY is NEVER stored — it comes from
     # $APERTUS_API_KEY / --api-key at re-run time).
     api_base: str | None = None
+    # Prompt mutations applied (in order) to every generated prompt.
+    # Recorded so reproduce.sh re-applies them identically.
+    mutations: list[str] | None = None
 
 
 def _utcnow() -> str:
@@ -49,9 +54,19 @@ def run_attack(module: AttackModule, backend: ModelBackend,
     assert len(prompts) == config.variations, \
         f"generate() returned {len(prompts)} prompts, expected {config.variations}"
 
+    # Mutations wrap the base prompts deterministically (same seed ->
+    # same mutated prompts). The pre-mutation text is kept as
+    # "base_prompt" so language-aware analysis still works.
+    mutations = config.mutations or []
+    base_prompts = list(prompts)
+    if mutations:
+        prompts = [apply_mutations(p, mutations, config.seed)
+                   for p in prompts]
+
     results_path = os.path.join(out_dir, "results.jsonl")
     flagged = 0
     scores: list[float] = []
+    records: list[dict] = []
     with open(results_path, "w") as f:
         for i, prompt in enumerate(prompts):
             response = backend.complete(
@@ -68,6 +83,8 @@ def run_attack(module: AttackModule, backend: ModelBackend,
                 "seed": config.seed,
                 "index": i,
                 "prompt": prompt,
+                "base_prompt": base_prompts[i],
+                "mutations": mutations,
                 "params": {"max_new_tokens": config.max_new_tokens,
                            "temperature": config.temperature},
                 "response": response,
@@ -75,14 +92,20 @@ def run_attack(module: AttackModule, backend: ModelBackend,
                 "model_id": backend.model_id,
                 "timestamp": _utcnow(),
             }
+            records.append(record)
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
+    stats = summarize_run(records)
     summary = {
         "run_id": run_id,
         "attack": module.name,
         "model_id": backend.model_id,
         "variations": config.variations,
         "flagged": flagged,
+        "asr": stats["asr"],
+        "wilson_ci": stats["wilson_ci"],
+        "language_delta": stats["language_delta"],
+        "mutations": mutations,
         "mean_score": sum(scores) / len(scores) if scores else 0.0,
         "max_score": max(scores) if scores else 0.0,
         "results_path": results_path,
