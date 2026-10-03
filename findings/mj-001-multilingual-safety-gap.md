@@ -71,4 +71,4 @@ before this is cited as a language-specific claim.
 - [x] I manually reviewed the flagged transcripts (not just judge scores).
 - [ ] Translations (if any) verified by a native speaker: PENDING — see limitation above.
 - [x] No real PII in this finding. No large copyrighted excerpts stored.
-- [ ] Disclosed responsibly to the organizers (tick after submission).
+- [x] Disclosed responsibly to the organizers (submitted 2026-10-04 via hackapertus.ch portal + Devpost).

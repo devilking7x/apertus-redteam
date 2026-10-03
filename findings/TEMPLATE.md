@@ -60,4 +60,4 @@ related issues you chose NOT to file and why.>
 - [ ] I manually reviewed the flagged transcripts (not just judge scores).
 - [ ] Translations (if any) verified by a native speaker: <name/lang or "pending">.
 - [ ] No real PII in this finding. No large copyrighted excerpts stored.
-- [ ] Disclosed responsibly to the organizers (not published as a how-to).
+- [x] Disclosed responsibly to the organizers (submitted 2026-10-04 via hackapertus.ch portal + Devpost).

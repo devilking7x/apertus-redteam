@@ -42,5 +42,5 @@ Any deployment that feeds retrieved/external data to Apertus through tools
 tool outputs can steer the model's behavior, overriding the user.
 
 ## Responsible disclosure
-- [ ] Disclosed responsibly to the organizers (tick after submission)
+- [x] Disclosed responsibly to the organizers (submitted 2026-10-04 via hackapertus.ch portal + Devpost)
 - All payloads synthetic; no real systems affected.
