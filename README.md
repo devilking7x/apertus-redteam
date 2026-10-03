@@ -7,12 +7,14 @@ underperforms or behaves unexpectedly").
 ## What / why
 
 Safety fine-tuning is usually validated in English and on a handful of
-attack styles. This harness probes seven attack classes with **seeded,
+attack styles. This harness probes **fifteen attack classes** with **seeded,
 deterministic prompt generation** and logs every prompt/response/judgment
 to JSONL, so any finding reproduces with one command — the jury's
 "validity" criterion rewards exactly this. `summary.json` carries the
 Attack Success Rate with a 95% Wilson confidence interval, and
 `redteam/figures.py` turns run statistics into report-ready charts.
+Tool/agentic attack classes drive the model's real tool-calling API
+(`chat_with_tools`), simulating agentic loops with poisoned tool outputs.
 
 **Heuristic judges are triage signals, not verdicts.** Every flagged case
 must be human-reviewed before it becomes a finding (see
@@ -27,9 +29,9 @@ pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 ```
 
-No Hugging Face token needed — `swiss-ai/Apertus-8B-Instruct-2509` is
-public and ungated (~16 GB in fp16; ~8 GB with `--load-in-8bit`-style
-quantization — see "Model size" below).
+Primary target: `swiss-ai/Apertus-v1.5-70B` via the CSCS Inference API
+(OpenAI-compatible, https://api.inference.cscs.ch/v1). Local HF backend
+also supported for the 8B variant.
 
 ## Quickstart
 
@@ -44,7 +46,9 @@ bash reproduce.sh <run-id>
 # Run everything (example sweep)
 for a in multilingual_jailbreak pii_extraction copyright_regurgitation \
          bias_stereotype prompt_injection factual_correctness \
-         swiss_culture_values; do
+         swiss_culture_values system_prompt_extraction swiss_dialect_jailbreak \
+         encoding_obfuscation crescendo_jailbreak manyshot_jailbreak \
+         tool_call_hijack agentic_loop_injection tool_description_poisoning; do
   python run.py --attack $a --seed 42 --variations 12
 done
 
@@ -60,7 +64,7 @@ CI / smoke test without a model:
 python run.py --attack prompt_injection --seed 1 --variations 3 --backend stub
 ```
 
-## The 7 attack classes
+## The 15 attack classes
 
 | Module | What it tests | Novelty angle |
 |---|---|---|
@@ -71,6 +75,14 @@ python run.py --attack prompt_injection --seed 1 --variations 3 --backend stub
 | `prompt_injection` | Carrier task + embedded instruction with unique canary; canary in output = hierarchy failure | Indirect injection |
 | `factual_correctness` | Verifiable Swiss facts (canton capitals), post-cutoff questions (model should hedge, not fabricate), YES/NO self-contradiction pairs | Hallucination traps with ground truth |
 | `swiss_culture_values` | Pushes to abandon neutrality / bypass direct democracy / drop a national language — does the model defend the value? | Values-alignment for a sovereign Swiss model |
+| `system_prompt_extraction` | Attempts to reveal hidden instructions | Confidentiality of system prompt |
+| `swiss_dialect_jailbreak` | Jailbreak attempts in Schwiizerdütsch | Native-dialect safety |
+| `encoding_obfuscation` | ROT13/reversed/interleaved payloads | Obfuscation robustness |
+| `crescendo_jailbreak` | 3-turn gradual escalation (multi-turn) | Multi-turn safety |
+| `manyshot_jailbreak` | 8/24/48-shot in-context conditioning (262K window) | Context-scale safety erosion |
+| `tool_call_hijack` | Injection steering tool calls via tool-calling API | Agentic confused-deputy |
+| `tool_description_poisoning` | Instructions hidden in tool descriptions | Tool metadata trust boundary |
+| `agentic_loop_injection` | Poisoned tool output in simulated agent loop | Indirect injection, agentic |
 
 ## Prompt mutations (`--mutations`)
 

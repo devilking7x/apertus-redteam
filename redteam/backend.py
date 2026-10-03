@@ -45,6 +45,17 @@ class ModelBackend(ABC):
         )
         return self.complete(last_user, max_new_tokens, temperature)
 
+    def chat_with_tools(self, messages: list[dict],
+                        max_new_tokens: int = 256,
+                        temperature: float = 0.0,
+                        tools: list[dict] | None = None) -> dict:
+        """Chat returning {"content": str, "tool_calls": [...]}.
+
+        Default: no tool support — returns content only, empty tool_calls.
+        """
+        return {"content": self.chat(messages, max_new_tokens, temperature),
+                "tool_calls": []}
+
 
 class HFBackend(ModelBackend):
     """Local Hugging Face transformers backend (default).
@@ -158,24 +169,55 @@ class OpenAIBackend(ModelBackend):
         return data["choices"][0]["message"]["content"].strip()
 
     def chat(self, messages: list[dict], max_new_tokens: int = 256,
-             temperature: float = 0.0) -> str:
+             temperature: float = 0.0, tools: list[dict] | None = None
+             ) -> str:
         """Native multi-turn chat via /chat/completions."""
-        body = json.dumps({
+        return self._chat_raw(messages, max_new_tokens, temperature,
+                              tools)["content"]
+
+    def chat_with_tools(self, messages: list[dict],
+                        max_new_tokens: int = 256,
+                        temperature: float = 0.0,
+                        tools: list[dict] | None = None) -> dict:
+        """Chat that also returns tool calls.
+
+        Returns {"content": str, "tool_calls": [ {"name":..., "arguments":...} ]}.
+        """
+        return self._chat_raw(messages, max_new_tokens, temperature, tools)
+
+    def _chat_raw(self, messages: list[dict], max_new_tokens: int = 256,
+                  temperature: float = 0.0,
+                  tools: list[dict] | None = None) -> dict:
+        body: dict = {
             "model": self._model_id,
             "messages": [{"role": m["role"], "content": m["content"]}
                          for m in messages],
             "max_tokens": max_new_tokens,
             "temperature": temperature,
-        }).encode()
+        }
+        if tools:
+            body["tools"] = tools
+            body["tool_choice"] = "auto"
         req = urllib.request.Request(
-            self._base_url + "/chat/completions", data=body,
+            self._base_url + "/chat/completions", data=json.dumps(body).encode(),
             headers={"Content-Type": "application/json"},
         )
         if self._api_key:
             req.add_header("Authorization", f"Bearer {self._api_key}")
         with urllib.request.urlopen(req, timeout=300) as resp:
             data = json.loads(resp.read().decode())
-        return data["choices"][0]["message"]["content"].strip()
+        msg = data["choices"][0]["message"]
+        tool_calls = []
+        for tc in msg.get("tool_calls") or []:
+            fn = tc.get("function", {})
+            args = fn.get("arguments", "{}")
+            try:
+                args = json.loads(args) if isinstance(args, str) else args
+            except Exception:
+                pass
+            tool_calls.append({"name": fn.get("name"), "arguments": args})
+        return {"content": (msg.get("content") or "").strip(),
+                "tool_calls": tool_calls}
 
 
 class StubBackend(ModelBackend):

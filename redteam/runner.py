@@ -53,10 +53,6 @@ def run_attack(module: AttackModule, backend: ModelBackend,
     prompts = module.generate(config.seed, config.variations)
     assert len(prompts) == config.variations, \
         f"generate() returned {len(prompts)} prompts, expected {config.variations}"
-
-    # Mutations wrap the base prompts deterministically (same seed ->
-    # same mutated prompts). The pre-mutation text is kept as
-    # "base_prompt" so language-aware analysis still works.
     mutations = config.mutations or []
     base_prompts = list(prompts)
     if mutations:
@@ -67,9 +63,36 @@ def run_attack(module: AttackModule, backend: ModelBackend,
     flagged = 0
     scores: list[float] = []
     records: list[dict] = []
-    conversations = module.generate_conversation(config.seed, config.variations)
     with open(results_path, "w") as f:
-        if conversations is not None:
+        if getattr(module, "uses_tools", False):
+            # Tool-attack path: the module drives its own agentic loop
+            # (may define tools, inspect tool_calls). Each variation
+            # returns a partial record; the runner fills bookkeeping.
+            assert hasattr(module, "run_tool_variation"), \
+                f"{module.name} sets uses_tools but has no run_tool_variation()"
+            for i in range(config.variations):
+                partial = module.run_tool_variation(
+                    backend, i, config.seed, config)
+                judgment = partial.pop("judgment")
+                scores.append(judgment["score"])
+                flagged += 1 if judgment["flag"] else 0
+                record = {
+                    "run_id": run_id,
+                    "attack": module.name,
+                    "seed": config.seed,
+                    "index": i,
+                    "mutations": mutations,
+                    "params": {"max_new_tokens": config.max_new_tokens,
+                               "temperature": config.temperature},
+                    "judge": judgment,
+                    "model_id": backend.model_id,
+                    "timestamp": _utcnow(),
+                    **partial,
+                }
+                records.append(record)
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        elif (conversations := module.generate_conversation(
+                config.seed, config.variations)) is not None:
             # Multi-turn path: scripted conversations, model sees only the
             # "user" turns in order; the final model reply is judged.
             assert len(conversations) == config.variations, \

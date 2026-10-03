@@ -12,6 +12,10 @@ from .system_prompt_extraction import SystemPromptExtraction
 from .swiss_dialect_jailbreak import SwissDialectJailbreak
 from .encoding_obfuscation import EncodingObfuscation
 from .crescendo_jailbreak import CrescendoJailbreak
+from .manyshot_jailbreak import ManyShotJailbreak
+from .tool_call_hijack import ToolCallHijack
+from .agentic_loop_injection import AgenticLoopInjection
+from .tool_description_poisoning import ToolDescriptionPoisoning
 
 REGISTRY: dict[str, type[AttackModule]] = {
     "multilingual_jailbreak": MultilingualJailbreak,
@@ -25,6 +29,10 @@ REGISTRY: dict[str, type[AttackModule]] = {
     "swiss_dialect_jailbreak": SwissDialectJailbreak,
     "encoding_obfuscation": EncodingObfuscation,
     "crescendo_jailbreak": CrescendoJailbreak,
+    "manyshot_jailbreak": ManyShotJailbreak,
+    "tool_call_hijack": ToolCallHijack,
+    "agentic_loop_injection": AgenticLoopInjection,
+    "tool_description_poisoning": ToolDescriptionPoisoning,
 }
 
 
