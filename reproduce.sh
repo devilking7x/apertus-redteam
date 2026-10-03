@@ -11,6 +11,11 @@ fi
 
 RUN_ID="$1"
 CFG="runs/${RUN_ID}/config.json"
+# Public clones don't have runs/ (gitignored); fall back to the
+# sanitized public dataset.
+if [ ! -f "$CFG" ]; then
+  CFG="dataset/${RUN_ID}/config.json"
+fi
 
 if [ ! -f "$CFG" ]; then
   echo "error: no such run: $CFG" >&2

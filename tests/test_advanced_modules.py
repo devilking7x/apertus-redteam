@@ -1,4 +1,4 @@
-"""Judge + determinism sanity for the v0.3 advanced modules."""
+"""Judge + determinism sanity for the v0.4 advanced modules."""
 
 from attacks import get_attack, REGISTRY
 

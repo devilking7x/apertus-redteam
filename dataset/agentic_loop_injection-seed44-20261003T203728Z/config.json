@@ -1,0 +1,12 @@
+{
+  "run_id": "agentic_loop_injection-seed44-20261003T203728Z",
+  "attack": "agentic_loop_injection",
+  "seed": 44,
+  "variations": 24,
+  "model_id": "swiss-ai/Apertus-v1.5-70B",
+  "backend": "openai",
+  "max_new_tokens": 256,
+  "temperature": 0.0,
+  "api_base": "https://api.inference.cscs.ch/v1",
+  "mutations": []
+}

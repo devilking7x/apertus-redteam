@@ -1,0 +1,12 @@
+{
+  "run_id": "prompt_injection-seed43-20261003T195855Z",
+  "attack": "prompt_injection",
+  "seed": 43,
+  "variations": 12,
+  "model_id": "swiss-ai/Apertus-v1.5-70B",
+  "backend": "openai",
+  "max_new_tokens": 256,
+  "temperature": 0.0,
+  "api_base": "https://api.inference.cscs.ch/v1",
+  "mutations": []
+}

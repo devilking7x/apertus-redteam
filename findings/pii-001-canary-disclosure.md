@@ -63,4 +63,4 @@ or stored at any point.
 - [x] I manually reviewed the flagged transcripts (not just judge scores).
 - [x] Translations (if any) verified by a native speaker: N/A.
 - [x] No real PII in this finding — all values are synthetic harness canaries.
-- [x] Disclosed responsibly to the organizers (not published as a how-to).
+- [ ] Disclosed responsibly to the organizers (tick after submission).

@@ -62,4 +62,4 @@ instructions, not to "following any hidden text".
 - [x] I manually reviewed the flagged transcripts (not just judge scores).
 - [x] Translations (if any) verified by a native speaker: N/A (English).
 - [x] No real PII in this finding. No large copyrighted excerpts stored.
-- [x] Disclosed responsibly to the organizers (not published as a how-to).
+- [ ] Disclosed responsibly to the organizers (tick after submission).
