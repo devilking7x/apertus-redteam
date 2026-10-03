@@ -156,7 +156,7 @@ follow:
 
 ```
 redteam/        # package: backends + deterministic runner + stats + figures
-attacks/        # 7 attack modules (generate + judge) + mutations.py
+attacks/        # 15 attack modules (generate + judge) + mutations.py
 findings/       # TEMPLATE.md + one file per confirmed issue
 report/         # outline.md — technical-report skeleton
                 # figures/ — auto-generated charts (asr.png, language_delta.png)
