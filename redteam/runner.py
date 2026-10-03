@@ -67,33 +67,75 @@ def run_attack(module: AttackModule, backend: ModelBackend,
     flagged = 0
     scores: list[float] = []
     records: list[dict] = []
+    conversations = module.generate_conversation(config.seed, config.variations)
     with open(results_path, "w") as f:
-        for i, prompt in enumerate(prompts):
-            response = backend.complete(
-                prompt,
-                max_new_tokens=config.max_new_tokens,
-                temperature=config.temperature,
-            )
-            judgment = module.judge(prompt, response)
-            scores.append(judgment["score"])
-            flagged += 1 if judgment["flag"] else 0
-            record = {
-                "run_id": run_id,
-                "attack": module.name,
-                "seed": config.seed,
-                "index": i,
-                "prompt": prompt,
-                "base_prompt": base_prompts[i],
-                "mutations": mutations,
-                "params": {"max_new_tokens": config.max_new_tokens,
-                           "temperature": config.temperature},
-                "response": response,
-                "judge": judgment,
-                "model_id": backend.model_id,
-                "timestamp": _utcnow(),
-            }
-            records.append(record)
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        if conversations is not None:
+            # Multi-turn path: scripted conversations, model sees only the
+            # "user" turns in order; the final model reply is judged.
+            assert len(conversations) == config.variations, \
+                (f"generate_conversation() returned {len(conversations)} "
+                 f"conversations, expected {config.variations}")
+            for i, script in enumerate(conversations):
+                history: list[dict] = []
+                user_turns = [t["content"] for t in script
+                              if t["role"] == "user"]
+                response = ""
+                for turn in user_turns:
+                    history.append({"role": "user", "content": turn})
+                    response = backend.chat(
+                        history,
+                        max_new_tokens=config.max_new_tokens,
+                        temperature=config.temperature,
+                    )
+                    history.append({"role": "assistant", "content": response})
+                judgment = module.judge(script[-1]["content"], response)
+                scores.append(judgment["score"])
+                flagged += 1 if judgment["flag"] else 0
+                record = {
+                    "run_id": run_id,
+                    "attack": module.name,
+                    "seed": config.seed,
+                    "index": i,
+                    "prompt": script[-1]["content"],
+                    "conversation": script,
+                    "base_prompt": script[-1]["content"],
+                    "mutations": mutations,
+                    "params": {"max_new_tokens": config.max_new_tokens,
+                               "temperature": config.temperature},
+                    "response": response,
+                    "judge": judgment,
+                    "model_id": backend.model_id,
+                    "timestamp": _utcnow(),
+                }
+                records.append(record)
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        else:
+            for i, prompt in enumerate(prompts):
+                response = backend.complete(
+                    prompt,
+                    max_new_tokens=config.max_new_tokens,
+                    temperature=config.temperature,
+                )
+                judgment = module.judge(prompt, response)
+                scores.append(judgment["score"])
+                flagged += 1 if judgment["flag"] else 0
+                record = {
+                    "run_id": run_id,
+                    "attack": module.name,
+                    "seed": config.seed,
+                    "index": i,
+                    "prompt": prompt,
+                    "base_prompt": base_prompts[i],
+                    "mutations": mutations,
+                    "params": {"max_new_tokens": config.max_new_tokens,
+                               "temperature": config.temperature},
+                    "response": response,
+                    "judge": judgment,
+                    "model_id": backend.model_id,
+                    "timestamp": _utcnow(),
+                }
+                records.append(record)
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     stats = summarize_run(records)
     summary = {

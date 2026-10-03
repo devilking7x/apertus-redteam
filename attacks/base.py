@@ -34,6 +34,21 @@ class AttackModule(ABC):
         rng.shuffle(items)
         return items[:k]
 
+    def generate_conversation(self, seed: int,
+                              n: int) -> list[list[dict]] | None:
+        """Optional multi-turn conversations.
+
+        Return a list of `n` conversations; each conversation is a list of
+        {"role": "user"/"assistant", "content": ...} dicts. The runner feeds
+        the conversation turn-by-turn through backend.chat() and judges the
+        FINAL assistant response. Return None (default) for single-turn
+        modules — the runner then uses generate()/complete() as before.
+        "assistant" turns in the returned script are the *attacker's*
+        scripted messages (e.g. benign acknowledgements); they are NOT sent
+        to the model. Only "user" turns go to the model.
+        """
+        return None
+
 
 # ---------------------------------------------------------------------------
 # Shared judge helpers

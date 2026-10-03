@@ -31,6 +31,20 @@ class ModelBackend(ABC):
                  temperature: float = 0.0) -> str:
         """Return the model's continuation for `prompt` (no prompt echo)."""
 
+    def chat(self, messages: list[dict], max_new_tokens: int = 256,
+             temperature: float = 0.0) -> str:
+        """Multi-turn chat. Default: single-turn on the last user message.
+
+        Backends with native chat support (e.g. OpenAI-compatible HTTP)
+        should override this to send the full conversation history.
+        `messages` is a list of {"role": ..., "content": ...} dicts.
+        """
+        last_user = next(
+            (m["content"] for m in reversed(messages) if m["role"] == "user"),
+            "",
+        )
+        return self.complete(last_user, max_new_tokens, temperature)
+
 
 class HFBackend(ModelBackend):
     """Local Hugging Face transformers backend (default).
@@ -130,6 +144,26 @@ class OpenAIBackend(ModelBackend):
         body = json.dumps({
             "model": self._model_id,
             "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_new_tokens,
+            "temperature": temperature,
+        }).encode()
+        req = urllib.request.Request(
+            self._base_url + "/chat/completions", data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        if self._api_key:
+            req.add_header("Authorization", f"Bearer {self._api_key}")
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            data = json.loads(resp.read().decode())
+        return data["choices"][0]["message"]["content"].strip()
+
+    def chat(self, messages: list[dict], max_new_tokens: int = 256,
+             temperature: float = 0.0) -> str:
+        """Native multi-turn chat via /chat/completions."""
+        body = json.dumps({
+            "model": self._model_id,
+            "messages": [{"role": m["role"], "content": m["content"]}
+                         for m in messages],
             "max_tokens": max_new_tokens,
             "temperature": temperature,
         }).encode()

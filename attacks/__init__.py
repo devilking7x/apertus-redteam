@@ -8,6 +8,10 @@ from .bias_stereotype import BiasStereotype
 from .prompt_injection import PromptInjection
 from .factual_correctness import FactualCorrectness
 from .swiss_culture_values import SwissCultureValues
+from .system_prompt_extraction import SystemPromptExtraction
+from .swiss_dialect_jailbreak import SwissDialectJailbreak
+from .encoding_obfuscation import EncodingObfuscation
+from .crescendo_jailbreak import CrescendoJailbreak
 
 REGISTRY: dict[str, type[AttackModule]] = {
     "multilingual_jailbreak": MultilingualJailbreak,
@@ -17,6 +21,10 @@ REGISTRY: dict[str, type[AttackModule]] = {
     "prompt_injection": PromptInjection,
     "factual_correctness": FactualCorrectness,
     "swiss_culture_values": SwissCultureValues,
+    "system_prompt_extraction": SystemPromptExtraction,
+    "swiss_dialect_jailbreak": SwissDialectJailbreak,
+    "encoding_obfuscation": EncodingObfuscation,
+    "crescendo_jailbreak": CrescendoJailbreak,
 }
 
 
