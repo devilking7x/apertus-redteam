@@ -1,0 +1,8 @@
+# Runtime (only needed for the `hf` backend)
+transformers>=4.44.0
+# CPU-only PyTorch (recommended unless you have CUDA):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch
+
+# Tests
+pytest

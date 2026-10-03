@@ -1,0 +1,14 @@
+# Run logs (may contain model outputs — never commit)
+runs/
+# Local copyright reference texts (never commit)
+refs/
+# Secrets
+.env
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+# OS
+.DS_Store
