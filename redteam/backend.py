@@ -120,6 +120,11 @@ class OpenAIBackend(ModelBackend):
     def model_id(self) -> str:
         return self._model_id
 
+    @property
+    def base_url(self) -> str:
+        """Effective base URL (after env fallback) — safe to log."""
+        return self._base_url
+
     def complete(self, prompt: str, max_new_tokens: int = 256,
                  temperature: float = 0.0) -> str:
         body = json.dumps({

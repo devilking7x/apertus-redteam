@@ -26,11 +26,15 @@ from redteam.runner import run_attack, RunConfig
 DEFAULT_MODEL = "swiss-ai/Apertus-8B-Instruct-2509"
 
 
-def build_backend(kind: str, model: str):
+def build_backend(kind: str, model: str, api_base: str | None = None,
+                   api_key: str | None = None):
     if kind == "hf":
         return HFBackend(model_id=model)
     if kind == "openai":
-        return OpenAIBackend(model_id=model)
+        # api_base/api_key fall back to APERTUS_BASE_URL / APERTUS_API_KEY
+        # env vars inside OpenAIBackend when None.
+        return OpenAIBackend(model_id=model, base_url=api_base,
+                             api_key=api_key)
     if kind == "stub":
         print("WARNING: stub backend — for tests/CI only, not real findings.",
               file=sys.stderr)
@@ -51,6 +55,13 @@ def main() -> int:
                     help=f"model id (default: {DEFAULT_MODEL})")
     ap.add_argument("--backend", default="hf", choices=["hf", "openai", "stub"],
                     help="model backend (default: hf)")
+    ap.add_argument("--api-base", default=None,
+                    help="base URL for --backend openai "
+                         "(default: $APERTUS_BASE_URL or http://localhost:8000/v1)")
+    ap.add_argument("--api-key", default=None,
+                    help="API key for --backend openai "
+                         "(default: $APERTUS_API_KEY; prefer env over CLI "
+                         "so the key never lands in shell history)")
     ap.add_argument("--max-tokens", type=int, default=256)
     ap.add_argument("--temperature", type=float, default=0.0,
                     help="0.0 = greedy/deterministic (default)")
@@ -62,7 +73,8 @@ def main() -> int:
         ap.error("--variations must be >= 1")
 
     module = get_attack(args.attack)
-    backend = build_backend(args.backend, args.model)
+    backend = build_backend(args.backend, args.model,
+                            api_base=args.api_base, api_key=args.api_key)
     ts = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_id = f"{module.name}-seed{args.seed}-{ts}"
     out_dir = os.path.join(args.out_root, run_id)
@@ -70,7 +82,11 @@ def main() -> int:
     config = RunConfig(attack=args.attack, seed=args.seed,
                        variations=args.variations, model_id=backend.model_id,
                        backend=args.backend, max_new_tokens=args.max_tokens,
-                       temperature=args.temperature)
+                       temperature=args.temperature,
+                       # Record the effective base URL so re-runs hit the
+                       # same endpoint. The key is never stored — it comes
+                       # from $APERTUS_API_KEY / --api-key at re-run time.
+                       api_base=getattr(backend, "base_url", None))
     print(f"[redteam] attack={module.name} seed={args.seed} "
           f"variations={args.variations} model={backend.model_id}")
     summary = run_attack(module, backend, config, out_dir)

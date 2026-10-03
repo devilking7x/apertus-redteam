@@ -22,6 +22,10 @@ class RunConfig:
     backend: str
     max_new_tokens: int = 256
     temperature: float = 0.0
+    # Effective HTTP base URL for the openai backend (recorded so a run is
+    # reproducible; the API KEY is NEVER stored — it comes from
+    # $APERTUS_API_KEY / --api-key at re-run time).
+    api_base: str | None = None
 
 
 def _utcnow() -> str:
