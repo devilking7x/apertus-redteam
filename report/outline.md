@@ -5,12 +5,12 @@
 > every claim from the repo alone.
 
 ## 1. Abstract
-- What we tested (model, 7 attack classes, N total prompt variations)
+- What we tested (model, 15 attack classes, N total prompt variations)
 - Headline results (X of 5 issues confirmed, strongest finding in one line)
 - Responsible-disclosure statement
 
 ## 2. Introduction & scope
-- Apertus 1.5 (8B-Instruct; 70B where noted), why red-teaming an open
+- Apertus 1.5 (70B-Instruct via CSCS API; 8B local where noted), why red-teaming an open
   sovereign LLM matters
 - In-scope: jailbreaks, bias/stereotyping, privacy, IP/copyright,
   factual correctness, prompt injection

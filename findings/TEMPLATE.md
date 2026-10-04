@@ -8,7 +8,7 @@
 <2–3 sentences: what the model did wrong, in plain language.>
 
 ## Affected model
-- Model ID: `swiss-ai/Apertus-8B-Instruct-2509` (or 70B variant)
+- Model ID: `swiss-ai/Apertus-70B-Instruct-2509` via CSCS Inference API (or 8B local variant)
 - Backend: hf / openai-hosted (which endpoint)
 - Commit / revision tested: <HF revision hash or API date>
 
